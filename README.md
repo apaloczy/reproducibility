@@ -1,6 +1,6 @@
 # reproducibility
 
-Tools for reproducing figures and files required to produce them, such as subsets of large datasets.
+Tools for reproducing figures and files required to plot them, such as subsets of large datasets or or derived fields.
 
 # Acknowledgements
 
