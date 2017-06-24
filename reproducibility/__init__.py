@@ -1,9 +1,9 @@
-from .utils import (gethash,
+from .utils import (get_current_repohash,
                     savefig,
-                    addhash_fig)
+                    add_repohashfig)
 
-__all__ = ['gethash',
+__all__ = ['get_current_repohash',
            'savefig',
-           'addhash_fig']
+           'add_repohashfig']
 
 __version__ = '0.1b0'
