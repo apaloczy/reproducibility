@@ -1,9 +1,9 @@
-from .utils import (get_current_repohash,
-                    savefig,
-                    add_repohashfig)
+from .reproducibility import (get_repohash,
+                              add_repohashfig,
+                              savefig)
 
-__all__ = ['get_current_repohash',
-           'savefig',
-           'add_repohashfig']
+__all__ = ['get_repohash',
+           'add_repohashfig',
+           'savefig']
 
 __version__ = '0.1b0'

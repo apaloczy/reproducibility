@@ -2,30 +2,64 @@
 # Author:      André Palóczy
 # E-mail:      paloczy@gmail.com
 
-import numpy as np
 from matplotlib.pyplot import savefig as savefig_mpl
+import subprocess
 from git.repo import Repo
+from PIL import Image
+from PIL import PngImagePlugin, JpegImagePlugin, EpsImagePlugin
+from PIL import TiffImagePlugin, PdfImagePlugin
 
 __all__ = ['get_repohash',
-           'savefig',
-           'add_repohashfig']
+           'add_repohashfig',
+           'savefig']
 
-def get_repohash(repo_path, search_parent_directories=False):
-    if repo_path is None:
-        search_parent_directories = True
+def get_repohash(repo_path=None, search_parent_directories=False):
+    """Convenience function that returns the current hash of a repo."""
+    if repo_path is None:                # If repo path is not provided, assume
+        search_parent_directories = True # working dir is a subdir of the repo.
     else:
         pass
-    watedRepo = Repo(path=repo_path, search_parent_directories=search_parent_directories)
-    return wantedRepo.head.object.sha
+    repo = Repo(path=repo_path, search_parent_directories=search_parent_directories)
 
-def savefig(figname, **kw):
+    return repo.head.commit.hexsha
+
+
+def add_repohashfig(figpath, repohash, repo_path, fmt=None):
+    """Adds a git hash to the metadata of a figure."""
+    plugin = _get_figmetadata(figpath, fmt=fmt) # Get right plugin for the figure.
+    img = Image.open(figpath)
+    metadata = _get_figmetadata(figpath, fmt=fmt)
+    metadata.add_text('Git repo path', repo_path)
+    metadata.add_text('Git repo hash', repohash)
+    img.save(img, 'png', pnginfo=metadata) # Overwrite figure with repo info.
+
+
+def savefig(figname, parent_repo_path, **kw):
     """
     A Wrapper for matplotlib.pyplot.savefig() that adds a the current
     git hash (of the repo that created the figure) to the figure metadata, after
     saving it. All keyword arguments are passed to matplotlib.pyplot.savefig.
     """
-    savefig_mpl(figname, **kw)    # Save figure.
-    Hash = get_repohash() # Read the current repo hash.
+    savefig_mpl(figname, **kw)                           # Save figure.
+    repohash = get_repohash(repo_path=parent_repo_path)  # Read the current repo hash.
+    add_repohashfig(figname, repohash, parent_repo_path) # Append repo name and hash to figure.
 
-def add_repohashfig():
-    return None
+
+def _get_figmetadata(figpath, fmt=None):
+    if fmt is None: # Attept to guess the figure format.
+        f = subprocess.Popen(['file', figpath], stdout=subprocess.PIPE)
+        fmt = str(f.stdout.read())
+    if 'PNG image data' in fmt:
+        metadata = PngImagePlugin.PngInfo()
+    elif 'JPG image data' in ftm or 'JPEG image data' in fmt:
+        raise NotImplementedError("JPG figure not implemented yet, sorry...")
+    elif 'PDF document' in ftype:
+        raise NotImplementedError("PDF figure not implemented yet, sorry...")
+    elif 'type EPS' in ftype:
+        raise NotImplementedError("EPS figure not implemented yet, sorry...")
+    elif 'TIFF image data' in fmt:
+        raise NotImplementedError("TIFF figure not implemented yet, sorry...")
+    else:
+        raise TypeError('No plugin available for image format "%s".'%ftype)
+
+    return metadata
