@@ -1,8 +1,10 @@
-from .reproducibility import (get_repohash,
+from .reproducibility import (repohash,
+                              stamp,
                               add_repohashfig,
                               savefig)
 
-__all__ = ['get_repohash',
+__all__ = ['repohash',
+           'stamp',
            'add_repohashfig',
            'savefig']
 

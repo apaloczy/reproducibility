@@ -3,17 +3,21 @@
 # E-mail:      paloczy@gmail.com
 
 from matplotlib.pyplot import savefig as savefig_mpl
+from datetime import datetime
+import os
 import subprocess
 from git.repo import Repo
 from PIL import Image
 from PIL import PngImagePlugin, JpegImagePlugin, EpsImagePlugin
 from PIL import TiffImagePlugin, PdfImagePlugin
 
-__all__ = ['get_repohash',
+__all__ = ['repohash',
+           'stamp',
            'add_repohashfig',
            'savefig']
 
-def get_repohash(repo_path=None, search_parent_directories=False):
+
+def repohash(repo_path=None, search_parent_directories=False):
     """Convenience function that returns the current hash of a repo."""
     if repo_path is None:                # If repo path is not provided, assume
         search_parent_directories = True # working dir is a subdir of the repo.
@@ -22,6 +26,16 @@ def get_repohash(repo_path=None, search_parent_directories=False):
     repo = Repo(path=repo_path, search_parent_directories=search_parent_directories)
 
     return repo.head.commit.hexsha
+
+
+def stamp(repo_path=None, search_parent_directories=False):
+    """Return name of script, current time and git repo hash."""
+    sname = __file__
+    user = os.environ['USER']
+    now = datetime.now().strftime("%b %d %Y %H:%M:%S")
+    rhash = repohash(repo_path=repo_path, search_parent_directories=search_parent_directories)
+
+    return dict(script_path=sname, time_created=now, user=user, git_repo_hash=rhash)
 
 
 def add_repohashfig(figpath, repohash, repo_path, fmt=None):
@@ -41,7 +55,7 @@ def savefig(figname, parent_repo_path, **kw):
     saving it. All keyword arguments are passed to matplotlib.pyplot.savefig.
     """
     savefig_mpl(figname, **kw)                           # Save figure.
-    repohash = get_repohash(repo_path=parent_repo_path)  # Read the current repo hash.
+    repohash = repohash(repo_path=parent_repo_path)  # Read the current repo hash.
     add_repohashfig(figname, repohash, parent_repo_path) # Append repo name and hash to figure.
 
 
