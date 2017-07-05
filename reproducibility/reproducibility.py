@@ -17,25 +17,35 @@ __all__ = ['repohash',
            'savefig']
 
 
-def repohash(repo_path=None, search_parent_directories=False):
+def repohash(repo_path=None, search_parent_directories=False, return_gitobj=False):
     """Convenience function that returns the current hash of a repo."""
     if repo_path is None:                # If repo path is not provided, assume
         search_parent_directories = True # working dir is a subdir of the repo.
-    else:
-        pass
     repo = Repo(path=repo_path, search_parent_directories=search_parent_directories)
 
-    return repo.head.commit.hexsha
+    if return_gitobj:
+        return repo
+    else:
+        return repo.head.commit.hexsha
 
 
 def stamp(repo_path=None, search_parent_directories=False):
-    """Return name of script, current time and git repo hash."""
+    """Return dictionary with current git repo hash and other metadata."""
+    repo = repohash(repo_path=repo_path,
+                    search_parent_directories=search_parent_directories,
+                    return_gitobj=True)
+    rhash = repo.head.commit.hexsha
+    gitpath = repo.commit().author.name
+    auth = repo.commit().author.name
+    authdt = repo.commit().authored_datetime.strftime("%b %d %Y %H:%M:%S %z").strip()
     sname = __file__
     user = os.environ['USER']
-    now = datetime.now().strftime("%b %d %Y %H:%M:%S")
-    rhash = repohash(repo_path=repo_path, search_parent_directories=search_parent_directories)
+    now = datetime.now().strftime("%b %d %Y %H:%M:%S %z").strip()
+    d = dict(parent_script_path=sname, time_created=now, created_by_user=user,
+             git_repo_path=gitpath, git_repo_hash=rhash, git_repo_author=auth,
+             git_repo_authored_date=authdt)
 
-    return dict(script_path=sname, time_created=now, user=user, git_repo_hash=rhash)
+    return d
 
 
 def add_repohashfig(figpath, repohash, repo_path, fmt=None):
