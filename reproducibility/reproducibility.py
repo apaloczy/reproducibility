@@ -35,15 +35,18 @@ def stamp(repo_path=None, search_parent_directories=False):
                     search_parent_directories=search_parent_directories,
                     return_gitobj=True)
     rhash = repo.head.commit.hexsha
-    gitpath = repo.commit().author.name
+    gitpath = repo.git_dir
     auth = repo.commit().author.name
     authdt = repo.commit().authored_datetime.strftime("%b %d %Y %H:%M:%S %z").strip()
     sname = __file__
     user = os.environ['USER']
+    f = subprocess.Popen(['uname', '-a'], stdout=subprocess.PIPE, shell=False)
+    uname = str(f.stdout.read()).replace('\\n\'', '').replace('b\'', '')
     now = datetime.now().strftime("%b %d %Y %H:%M:%S %z").strip()
-    d = dict(parent_script_path=sname, time_created=now, created_by_user=user,
-             git_repo_path=gitpath, git_repo_hash=rhash, git_repo_author=auth,
-             git_repo_authored_date=authdt)
+    d = dict(parent_script_path=sname, time_file_was_created=now,
+             file_was_created_by_user=user, git_repo_path=gitpath,
+             git_repo_author=auth, time_git_repo_commit=authdt,
+             git_repo_hash=rhash, uname_output=uname)
 
     return d
 
