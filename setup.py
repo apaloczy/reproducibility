@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='reproducibility',
-      version='0.1b0',
+      version='0.1',
       description='Tools for reproducing figures and files required to plot them, such as subsets of large datasets or or derived fields.',
       url='https://github.com/apaloczy/reproducibility',
       license='MIT',

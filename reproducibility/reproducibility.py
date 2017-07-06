@@ -2,10 +2,10 @@
 # Author:      André Palóczy
 # E-mail:      paloczy@gmail.com
 
-from matplotlib.pyplot import savefig as savefig_mpl
-from datetime import datetime
 import os
 import subprocess
+from matplotlib.pyplot import savefig as savefig_mpl
+from datetime import datetime
 from git.repo import Repo
 from PIL import Image
 from PIL import PngImagePlugin, JpegImagePlugin, EpsImagePlugin

@@ -1,3 +1,3 @@
-+ Function to add git hash to figure metadata (Deepak Cherian's idea, http://cherian.net/posts/reproducible-research-1.html).
-+ Function to add/check md5 for binary files (e.g., *.nc, *.npz, *.mat, *.pkl).
-+ Wrapper for nco tool nccmp, compare netCDF files bit-wise.
+(DONE) * Function to add git hash to figure metadata (Deepak Cherian's idea, http://cherian.net/posts/reproducible-research-1.html).
+* Function to add/check md5 for binary files (e.g., *.nc, *.npz, *.mat, *.pkl).
+* Wrapper for nco tool nccmp, compare netCDF files bit-wise.
