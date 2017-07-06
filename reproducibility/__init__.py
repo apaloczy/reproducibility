@@ -1,11 +1,11 @@
 from .reproducibility import (repohash,
                               stamp,
-                              add_repohashfig,
+                              stamp_fig,
                               savefig)
 
 __all__ = ['repohash',
            'stamp',
-           'add_repohashfig',
+           'stamp_fig',
            'savefig']
 
 __version__ = '0.1b0'

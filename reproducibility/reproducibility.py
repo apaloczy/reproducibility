@@ -13,7 +13,7 @@ from PIL import TiffImagePlugin, PdfImagePlugin
 
 __all__ = ['repohash',
            'stamp',
-           'add_repohashfig',
+           'stamp_fig',
            'savefig']
 
 
@@ -51,14 +51,18 @@ def stamp(repo_path=None, search_parent_directories=False):
     return d
 
 
-def add_repohashfig(figpath, repohash, repo_path, fmt=None):
+def stamp_fig(figpath, repo_path=None, search_parent_directories=False, fmt='guess'):
     """Adds a git hash to the metadata of a figure."""
-    plugin = _get_figmetadata(figpath, fmt=fmt) # Get right plugin for the figure.
+    metadata, fmt = _get_plugin(figpath, fmt=fmt) # Get the right plugin for each format.
     img = Image.open(figpath)
-    metadata = _get_figmetadata(figpath, fmt=fmt)
-    metadata.add_text('Git repo path', repo_path)
-    metadata.add_text('Git repo hash', repohash)
-    img.save(img, 'png', pnginfo=metadata) # Overwrite figure with repo info.
+    stp = stamp(repo_path=repo_path, search_parent_directories=search_parent_directories)
+    for i in stp.items():
+        metadata.add_text(i[0], i[1])
+    fmt = fmt.lower()
+    if 'png' in fmt:
+        img.save(figpath, 'png', pnginfo=metadata) # Overwrite figure with repo info.
+    else:
+        raise NotImplementedError("Only PNG figure implemented so far, sorry...")
 
 
 def savefig(figname, parent_repo_path, **kw):
@@ -67,26 +71,31 @@ def savefig(figname, parent_repo_path, **kw):
     git hash (of the repo that created the figure) to the figure metadata, after
     saving it. All keyword arguments are passed to matplotlib.pyplot.savefig.
     """
-    savefig_mpl(figname, **kw)                           # Save figure.
-    repohash = repohash(repo_path=parent_repo_path)  # Read the current repo hash.
-    add_repohashfig(figname, repohash, parent_repo_path) # Append repo name and hash to figure.
+    savefig_mpl(figname, **kw) # Save figure first.
+    stamp_fig(figname)         # Append git hash and other metadata to figure.
 
 
-def _get_figmetadata(figpath, fmt=None):
-    if fmt is None: # Attept to guess the figure format.
-        f = subprocess.Popen(['file', figpath], stdout=subprocess.PIPE)
-        fmt = str(f.stdout.read())
-    if 'PNG image data' in fmt:
-        metadata = PngImagePlugin.PngInfo()
-    elif 'JPG image data' in ftm or 'JPEG image data' in fmt:
+def _get_plugin(figpath, fmt='guess'):
+    if fmt is 'guess': # Attept to guess the figure format.
+        fmt = _guess_fmt(figpath)
+    fmt = fmt.lower()
+    if 'png' in fmt:
+        plugin = PngImagePlugin.PngInfo()
+    elif 'jpg' in fmt or 'jpeg' in fmt:
         raise NotImplementedError("JPG figure not implemented yet, sorry...")
-    elif 'PDF document' in ftype:
+    elif 'pdf' in fmt:
         raise NotImplementedError("PDF figure not implemented yet, sorry...")
-    elif 'type EPS' in ftype:
+    elif 'eps' in fmt:
         raise NotImplementedError("EPS figure not implemented yet, sorry...")
-    elif 'TIFF image data' in fmt:
+    elif 'tiff' in fmt:
         raise NotImplementedError("TIFF figure not implemented yet, sorry...")
     else:
-        raise TypeError('No plugin available for image format "%s".'%ftype)
+        raise TypeError('No plugin available for image format "%s".'%fmt)
 
-    return metadata
+    return plugin, fmt
+
+def _guess_fmt(figpath):
+    f = subprocess.Popen(['file', figpath], stdout=subprocess.PIPE)
+    fmt = str(f.stdout.read()).split(':')[1].strip()
+
+    return fmt
