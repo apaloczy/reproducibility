@@ -6,6 +6,7 @@ import os
 import subprocess
 from matplotlib.pyplot import savefig as savefig_mpl
 from datetime import datetime
+from git import InvalidGitRepositoryError
 from git.repo import Repo
 from PIL import Image
 from PIL import PngImagePlugin, JpegImagePlugin, EpsImagePlugin
@@ -19,9 +20,13 @@ __all__ = ['repohash',
 
 def repohash(repo_path=None, search_parent_directories=False, return_gitobj=False):
     """Convenience function that returns the current hash of a repo."""
-    if repo_path is None:                # If repo path is not provided, assume
+    if not repo_path:                    # If repo path is not provided, assume
         search_parent_directories = True # working dir is a subdir of the repo.
-    repo = Repo(path=repo_path, search_parent_directories=search_parent_directories)
+    try:
+        repo = Repo(path=repo_path, search_parent_directories=search_parent_directories)
+    except InvalidGitRepositoryError:
+        print("Git repository not found.")
+        return
 
     if return_gitobj:
         return repo
@@ -65,14 +70,16 @@ def stamp_fig(figpath, repo_path=None, search_parent_directories=False, fmt='gue
         raise NotImplementedError("Only PNG figure implemented so far, sorry...")
 
 
-def savefig(figname, parent_repo_path, **kw):
+def savefig(figname, repo_path=None, search_parent_directories=False, fmt='png', **kw):
     """
     A Wrapper for matplotlib.pyplot.savefig() that adds a the current
     git hash (of the repo that created the figure) to the figure metadata, after
-    saving it. All keyword arguments are passed to matplotlib.pyplot.savefig.
+    saving it. Keyword arguments are passed to stamp_fig and matplotlib.pyplot.savefig.
     """
-    savefig_mpl(figname, **kw) # Save figure first.
-    stamp_fig(figname)         # Append git hash and other metadata to figure.
+    savefig_mpl(figname, fmt=fmt, **kw) # Save figure first.
+    # Append git hash and other metadata to figure file.
+    stamp_fig(figname, repo_path=repo_path, \
+              search_parent_directories=search_parent_directories, fmt=fmt)
 
 
 def _get_plugin(figpath, fmt='guess'):
