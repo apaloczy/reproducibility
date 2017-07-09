@@ -3,15 +3,14 @@
 # E-mail:      paloczy@gmail.com
 
 import subprocess
-from os import system, environ
+import os
+from os import system
 from matplotlib.pyplot import savefig as savefig_mpl
 from datetime import datetime
 from git import InvalidGitRepositoryError
 from git.repo import Repo
 
-from . import __path__
-__cfgfile__ = __path__[0] + '/mknewtag.cfg'
-__cfgstr__ = 'NEWTAG => { },'
+from . import __cfgfile__, __cfgstr__
 
 __all__ = ['repohash',
            'stamp',
@@ -37,7 +36,6 @@ def repohash(repo_path=None, search_parent_directories=False, return_gitobj=Fals
 
 def stamp(repo_path=None, search_parent_directories=False):
     """Return dictionary with current git repo hash and other metadata."""
-    print(super)
     repo = repohash(repo_path=repo_path,
                     search_parent_directories=search_parent_directories,
                     return_gitobj=True)
@@ -53,7 +51,7 @@ def stamp(repo_path=None, search_parent_directories=False):
         authdt = repo.commit().authored_datetime.strftime("%b %d %Y %H:%M:%S %z").strip()
 
     sname = __file__
-    user = environ['USER']
+    user = os.environ['USER']
     f = subprocess.Popen(['uname', '-a'], stdout=subprocess.PIPE, shell=False)
     uname = str(f.stdout.read()).replace('\\n\'', '').replace('b\'', '')
     now = datetime.now().strftime("%b %d %Y %H:%M:%S %z").strip()
@@ -65,12 +63,15 @@ def stamp(repo_path=None, search_parent_directories=False):
     return d
 
 
-def stamp_fig(figpath, repo_path=None, search_parent_directories=False):
+def stamp_fig(figpath, repo_path=None, search_parent_directories=False, wipe_metadata=True):
     """Adds a git hash to the metadata of a figure."""
+    if wipe_metadata: # Remove all deletable tags before writing stamp.
+        system("exiftool -all= %s"%figpath)
+
     s = stamp(repo_path=repo_path, search_parent_directories=search_parent_directories)
     # 1) Edit .cfg file.
     # 2) execute exiftool to write tags to image.
-    # 3) Reset cfg file.
+    # 3) Reset .cfg file.
     for tag, val in s.items():
         sedcmd1 = "sed -i \'/%s/c\\%s => { },\' %s"%(__cfgstr__, tag, __cfgfile__)
         exfcmd = "exiftool -config %s -xmp-dc:%s=\"%s\" %s"%(__cfgfile__, tag, val, figpath)
@@ -87,7 +88,7 @@ def savefig(figname, repo_path=None, search_parent_directories=False, fmt='png',
     savefig_mpl(figname, fmt=fmt, **kw) # Save figure first.
     # Append git hash and other metadata to figure file.
     stamp_fig(figname, repo_path=repo_path, \
-              search_parent_directories=search_parent_directories, fmt=fmt)
+              search_parent_directories=search_parent_directories)
 
 
 def _guess_fmt(figpath):
