@@ -5,6 +5,7 @@
 import subprocess
 import os
 from os import system
+from pkgutil import get_importer
 from matplotlib.pyplot import savefig as savefig_mpl
 from datetime import datetime
 from git import InvalidGitRepositoryError
@@ -15,6 +16,7 @@ from . import __cfgfile__, __cfgstr__
 __all__ = ['repohash',
            'stamp',
            'stamp_fig',
+           'get_fig_metadata',
            'savefig']
 
 
@@ -50,12 +52,12 @@ def stamp(repo_path=None, search_parent_directories=False):
         auth = repo.commit().author.name
         authdt = repo.commit().authored_datetime.strftime("%b %d %Y %H:%M:%S %z").strip()
 
-    sname = __file__
+    sname = get_importer(os.getcwd())
     user = os.environ['USER']
     f = subprocess.Popen(['uname', '-a'], stdout=subprocess.PIPE, shell=False)
     uname = str(f.stdout.read()).replace('\\n\'', '').replace('b\'', '')
     now = datetime.now().strftime("%b %d %Y %H:%M:%S %z").strip()
-    d = dict(parent_script_path=sname, time_file_was_created=now,
+    d = dict(parent_script_dir=sname, time_file_was_created=now,
              file_was_created_by_user=user, git_repo_path=gitpath,
              git_repo_author=auth, time_git_repo_commit=authdt,
              git_repo_hash=rhash, uname_output=uname)
@@ -89,6 +91,14 @@ def savefig(figname, repo_path=None, search_parent_directories=False, fmt='png',
     # Append git hash and other metadata to figure file.
     stamp_fig(figname, repo_path=repo_path, \
               search_parent_directories=search_parent_directories)
+
+
+def get_fig_metadata(figpath):
+    """Extract the text in the metadata fields of an image file."""
+    f = subprocess.Popen(['exiftool', figpath], stdout=subprocess.PIPE)
+    fmt = str(f.stdout.read()).split(':')[1].strip()
+
+    return d
 
 
 def _guess_fmt(figpath):
