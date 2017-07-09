@@ -1,4 +1,4 @@
-__version__ = '0.1'
+__version__ = '0.2.1'
 
 __cfgfile__ = __path__[0] + '/mknewtag.cfg'
 __cfgstr__ = 'NEWTAG => { },'
