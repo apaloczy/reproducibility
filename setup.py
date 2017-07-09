@@ -13,7 +13,6 @@ setup(name='reproducibility',
       install_requires=[
           'matplotlib',
           'datetime',
-          'PIL',
           'netCDF4',
           'gitpython'
       ],

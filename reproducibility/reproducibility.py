@@ -2,15 +2,16 @@
 # Author:      André Palóczy
 # E-mail:      paloczy@gmail.com
 
-import os
 import subprocess
+from os import system, environ
 from matplotlib.pyplot import savefig as savefig_mpl
 from datetime import datetime
 from git import InvalidGitRepositoryError
 from git.repo import Repo
-from PIL import Image
-from PIL import PngImagePlugin, JpegImagePlugin, EpsImagePlugin
-from PIL import TiffImagePlugin, PdfImagePlugin
+
+from . import __path__
+__cfgfile__ = __path__[0] + '/mknewtag.cfg'
+__cfgstr__ = 'NEWTAG => { },'
 
 __all__ = ['repohash',
            'stamp',
@@ -25,8 +26,8 @@ def repohash(repo_path=None, search_parent_directories=False, return_gitobj=Fals
     try:
         repo = Repo(path=repo_path, search_parent_directories=search_parent_directories)
     except InvalidGitRepositoryError:
-        print("Git repository not found.")
-        return
+        print("Warning: Git repository not found. No git info added to this stamp.")
+        return None
 
     if return_gitobj:
         return repo
@@ -36,15 +37,23 @@ def repohash(repo_path=None, search_parent_directories=False, return_gitobj=Fals
 
 def stamp(repo_path=None, search_parent_directories=False):
     """Return dictionary with current git repo hash and other metadata."""
+    print(super)
     repo = repohash(repo_path=repo_path,
                     search_parent_directories=search_parent_directories,
                     return_gitobj=True)
-    rhash = repo.head.commit.hexsha
-    gitpath = repo.git_dir
-    auth = repo.commit().author.name
-    authdt = repo.commit().authored_datetime.strftime("%b %d %Y %H:%M:%S %z").strip()
+    if not repo:
+        rhash = None
+        gitpath = None
+        auth = None
+        authdt = None
+    else:
+        rhash = repo.head.commit.hexsha
+        gitpath = repo.git_dir
+        auth = repo.commit().author.name
+        authdt = repo.commit().authored_datetime.strftime("%b %d %Y %H:%M:%S %z").strip()
+
     sname = __file__
-    user = os.environ['USER']
+    user = environ['USER']
     f = subprocess.Popen(['uname', '-a'], stdout=subprocess.PIPE, shell=False)
     uname = str(f.stdout.read()).replace('\\n\'', '').replace('b\'', '')
     now = datetime.now().strftime("%b %d %Y %H:%M:%S %z").strip()
@@ -56,18 +65,17 @@ def stamp(repo_path=None, search_parent_directories=False):
     return d
 
 
-def stamp_fig(figpath, repo_path=None, search_parent_directories=False, fmt='guess'):
+def stamp_fig(figpath, repo_path=None, search_parent_directories=False):
     """Adds a git hash to the metadata of a figure."""
-    metadata, fmt = _get_plugin(figpath, fmt=fmt) # Get the right plugin for each format.
-    img = Image.open(figpath)
-    stp = stamp(repo_path=repo_path, search_parent_directories=search_parent_directories)
-    for i in stp.items():
-        metadata.add_text(i[0], i[1])
-    fmt = fmt.lower()
-    if 'png' in fmt:
-        img.save(figpath, 'png', pnginfo=metadata) # Overwrite figure with repo info.
-    else:
-        raise NotImplementedError("Only PNG figure implemented so far, sorry...")
+    s = stamp(repo_path=repo_path, search_parent_directories=search_parent_directories)
+    # 1) Edit .cfg file.
+    # 2) execute exiftool to write tags to image.
+    # 3) Reset cfg file.
+    for tag, val in s.items():
+        sedcmd1 = "sed -i \'/%s/c\\%s => { },\' %s"%(__cfgstr__, tag, __cfgfile__)
+        exfcmd = "exiftool -config %s -xmp-dc:%s=\"%s\" %s"%(__cfgfile__, tag, val, figpath)
+        sedcmd2 = "sed -i '/%s/c\%s' %s"%(tag, __cfgstr__, __cfgfile__)
+        _batch_exec([sedcmd1, exfcmd, sedcmd2])
 
 
 def savefig(figname, repo_path=None, search_parent_directories=False, fmt='png', **kw):
@@ -82,27 +90,12 @@ def savefig(figname, repo_path=None, search_parent_directories=False, fmt='png',
               search_parent_directories=search_parent_directories, fmt=fmt)
 
 
-def _get_plugin(figpath, fmt='guess'):
-    if fmt is 'guess': # Attept to guess the figure format.
-        fmt = _guess_fmt(figpath)
-    fmt = fmt.lower()
-    if 'png' in fmt:
-        plugin = PngImagePlugin.PngInfo()
-    elif 'jpg' in fmt or 'jpeg' in fmt:
-        raise NotImplementedError("JPG figure not implemented yet, sorry...")
-    elif 'pdf' in fmt:
-        raise NotImplementedError("PDF figure not implemented yet, sorry...")
-    elif 'eps' in fmt:
-        raise NotImplementedError("EPS figure not implemented yet, sorry...")
-    elif 'tiff' in fmt:
-        raise NotImplementedError("TIFF figure not implemented yet, sorry...")
-    else:
-        raise TypeError('No plugin available for image format "%s".'%fmt)
-
-    return plugin, fmt
-
 def _guess_fmt(figpath):
     f = subprocess.Popen(['file', figpath], stdout=subprocess.PIPE)
     fmt = str(f.stdout.read()).split(':')[1].strip()
 
     return fmt
+
+
+def _batch_exec(cmds):
+    _ = [system(cmd) for cmd in cmds]
