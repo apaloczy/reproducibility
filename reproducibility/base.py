@@ -1,10 +1,10 @@
-# Description: Tools for reproducibility.
+# Description: Tools for reproducible research.
 # Author:      André Palóczy
 # E-mail:      paloczy@gmail.com
 
-import subprocess
 import os
 from os import system
+import subprocess
 from pkgutil import get_importer
 from matplotlib.pyplot import savefig as savefig_mpl
 from datetime import datetime

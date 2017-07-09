@@ -8,7 +8,7 @@ __all__ = ['repohash',
            'stamp_fig',
            'savefig']
 
-from .reproducibility import (repohash,
-                              stamp,
-                              stamp_fig,
-                              savefig)
+from .base import (repohash,
+                   stamp,
+                   stamp_fig,
+                   savefig)
