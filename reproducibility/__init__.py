@@ -6,9 +6,11 @@ __cfgstr__ = 'NEWTAG => { },'
 __all__ = ['repohash',
            'stamp',
            'stamp_fig',
-           'savefig']
+           'savefig',
+           'read_fig_metadata']
 
 from .base import (repohash,
                    stamp,
                    stamp_fig,
-                   savefig)
+                   savefig,
+                   read_fig_metadata)

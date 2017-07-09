@@ -4,7 +4,7 @@
 
 import os
 from os import system
-import subprocess
+from subprocess import check_output
 from pkgutil import get_importer
 from matplotlib.pyplot import savefig as savefig_mpl
 from datetime import datetime
@@ -16,8 +16,8 @@ from . import __cfgfile__, __cfgstr__
 __all__ = ['repohash',
            'stamp',
            'stamp_fig',
-           'get_fig_metadata',
-           'savefig']
+           'savefig',
+           'read_fig_metadata']
 
 
 def repohash(repo_path=None, search_parent_directories=False, return_gitobj=False):
@@ -54,8 +54,7 @@ def stamp(repo_path=None, search_parent_directories=False):
 
     sname = get_importer(os.getcwd())
     user = os.environ['USER']
-    f = subprocess.Popen(['uname', '-a'], stdout=subprocess.PIPE, shell=False)
-    uname = str(f.stdout.read()).replace('\\n\'', '').replace('b\'', '')
+    uname = check_output(['uname', '-a'])
     now = datetime.now().strftime("%b %d %Y %H:%M:%S %z").strip()
     d = dict(parent_script_dir=sname, time_file_was_created=now,
              file_was_created_by_user=user, git_repo_path=gitpath,
@@ -65,9 +64,9 @@ def stamp(repo_path=None, search_parent_directories=False):
     return d
 
 
-def stamp_fig(figpath, repo_path=None, search_parent_directories=False, wipe_metadata=True):
+def stamp_fig(figpath, repo_path=None, search_parent_directories=False, wipe=True):
     """Adds a git hash to the metadata of a figure."""
-    if wipe_metadata: # Remove all deletable tags before writing stamp.
+    if wipe: # Remove all deletable tags before writing stamp.
         system("exiftool -all= %s"%figpath)
 
     s = stamp(repo_path=repo_path, search_parent_directories=search_parent_directories)
@@ -93,19 +92,26 @@ def savefig(figname, repo_path=None, search_parent_directories=False, fmt='png',
               search_parent_directories=search_parent_directories)
 
 
-def get_fig_metadata(figpath):
+def read_fig_metadata(figpath, wipe=True):
     """Extract the text in the metadata fields of an image file."""
-    f = subprocess.Popen(['exiftool', figpath], stdout=subprocess.PIPE)
-    fmt = str(f.stdout.read()).split(':')[1].strip()
+    tab = check_output(['exiftool', figpath]).decode().splitlines()
+    k = [l.split(':')[0].strip() for l in tab]
+    v = [l.split(':')[1].strip() for l in tab]
+    d = {}
+    for kn, vn in zip(k, v):
+        d.update({kn.casefold().replace(' ', '_'):vn})
+
+    if wipe: # Retrieve only the metadata fields assigned by stamp().
+        stamp_tags = stamp().keys()
+        krms = list(set(d).symmetric_difference(set(stamp_tags)))
+        for krm in krms:
+            d.pop(krm)
 
     return d
 
 
 def _guess_fmt(figpath):
-    f = subprocess.Popen(['file', figpath], stdout=subprocess.PIPE)
-    fmt = str(f.stdout.read()).split(':')[1].strip()
-
-    return fmt
+    return check_output(['file', figpath]).decode()
 
 
 def _batch_exec(cmds):
