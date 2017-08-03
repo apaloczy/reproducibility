@@ -52,9 +52,9 @@ def stamp(repo_path=None, search_parent_directories=False):
         auth = repo.commit().author.name
         authdt = repo.commit().authored_datetime.strftime("%b %d %Y %H:%M:%S %z").strip()
 
-    sname = get_importer(os.getcwd())
+    sname = get_importer(os.getcwd()).path
     user = os.environ['USER']
-    uname = check_output(['uname', '-a'])
+    uname = check_output(['uname', '-a']).decode('UTF-8')
     now = datetime.now().strftime("%b %d %Y %H:%M:%S %z").strip()
     d = dict(parent_script_dir=sname, time_file_was_created=now,
              file_was_created_by_user=user, git_repo_path=gitpath,
