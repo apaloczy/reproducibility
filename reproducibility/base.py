@@ -111,7 +111,7 @@ def read_fig_metadata(figpath, wipe=True):
 
 
 def _guess_fmt(figpath):
-    return check_output(['file', figpath]).decode()
+    return check_output(['file', figpath]).decode('UTF-8')
 
 
 def _batch_exec(cmds):
