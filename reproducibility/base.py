@@ -67,7 +67,7 @@ def stamp(repo_path=None, search_parent_directories=False):
 def stamp_fig(figpath, repo_path=None, search_parent_directories=False, wipe=True):
     """Adds a git hash to the metadata of a figure."""
     if wipe: # Remove all deletable tags before writing stamp.
-        system("exiftool -all= %s"%figpath)
+        system("exiftool -all= %s -q"%figpath)
 
     s = stamp(repo_path=repo_path, search_parent_directories=search_parent_directories)
     # 1) Edit .cfg file.
@@ -75,9 +75,10 @@ def stamp_fig(figpath, repo_path=None, search_parent_directories=False, wipe=Tru
     # 3) Reset .cfg file.
     for tag, val in s.items():
         sedcmd1 = "sed -i \'/%s/c\\%s => { },\' %s"%(__cfgstr__, tag, __cfgfile__)
-        exfcmd = "exiftool -config %s -xmp-dc:%s=\"%s\" %s"%(__cfgfile__, tag, val, figpath)
+        exfcmd = "exiftool -config %s -q -xmp-dc:%s=\"%s\" %s"%(__cfgfile__, tag, val, figpath)
         sedcmd2 = "sed -i '/%s/c\%s' %s"%(tag, __cfgstr__, __cfgfile__)
-        _batch_exec([sedcmd1, exfcmd, sedcmd2])
+        cleancmd = "rm -f %s_original"%figpath
+        _batch_exec([sedcmd1, exfcmd, sedcmd2, cleancmd])
 
 
 def savefig(figname, repo_path=None, search_parent_directories=False, fmt='png', **kw):
@@ -92,7 +93,7 @@ def savefig(figname, repo_path=None, search_parent_directories=False, fmt='png',
               search_parent_directories=search_parent_directories)
 
 
-def read_fig_metadata(figpath, wipe=True):
+def read_fig_metadata(figpath, stamp_tags_only=True):
     """Extract the text in the metadata fields of an image file."""
     tab = check_output(['exiftool', figpath]).decode().splitlines()
     k = [l.split(':')[0].strip() for l in tab]
@@ -101,11 +102,11 @@ def read_fig_metadata(figpath, wipe=True):
     for kn, vn in zip(k, v):
         d.update({kn.casefold().replace(' ', '_'):vn})
 
-    if wipe: # Retrieve only the metadata fields assigned by stamp().
+    if stamp_tags_only: # Retrieve only the metadata fields assigned by stamp().
         stamp_tags = stamp().keys()
         krms = list(set(d).symmetric_difference(set(stamp_tags)))
         for krm in krms:
-            d.pop(krm)
+            _ = d.pop(krm)
 
     return d
 
