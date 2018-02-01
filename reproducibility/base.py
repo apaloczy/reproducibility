@@ -4,8 +4,10 @@
 
 import os
 from os import system
+import pickle
 from subprocess import check_output
 from pkgutil import get_importer
+from matplotlib.pyplot import gcf
 from matplotlib.pyplot import savefig as savefig_mpl
 from datetime import datetime
 from git import InvalidGitRepositoryError
@@ -81,16 +83,24 @@ def stamp_fig(figpath, repo_path=None, search_parent_directories=False, wipe=Tru
         _batch_exec([sedcmd1, exfcmd, sedcmd2, cleancmd])
 
 
-def savefig(figname, repo_path=None, search_parent_directories=False, fmt='png', **kw):
+def savefig(figname, repo_path=None, search_parent_directories=False, \
+            auto_commit=True, fmt='png', pickle_fig=False, **kw):
     """
     A Wrapper for matplotlib.pyplot.savefig() that adds a the current
     git hash (of the repo that created the figure) to the figure metadata, after
-    saving it. Keyword arguments are passed to stamp_fig and matplotlib.pyplot.savefig.
+    saving it. Keyword arguments are passed to stamp_fig and
+    matplotlib.pyplot.savefig.
+
+    If kw 'pickle_fig' is set to True, also pickle the figure handle (for future
+    interactive viewing).
     """
     savefig_mpl(figname, fmt=fmt, **kw) # Save figure first.
     # Append git hash and other metadata to figure file.
     stamp_fig(figname, repo_path=repo_path, \
               search_parent_directories=search_parent_directories)
+    if pickle_fig:
+        pklname = figname.replace(fmt, 'pkl')
+        pickle.dump(gcf(), open(pklname, 'wb'))
 
 
 def read_fig_metadata(figpath, stamp_tags_only=True):
