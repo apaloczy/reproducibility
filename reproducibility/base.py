@@ -108,8 +108,8 @@ def savefig(figname, repo_path=None, search_parent_directories=False, \
     saving it. Keyword arguments are passed to stamp_fig and
     matplotlib.pyplot.savefig.
 
-    If kw 'pickle_fig' is set to True, also pickle the figure handle (for future
-    interactive viewing).
+    If kw 'pickle_fig' is set to True, also pickle the figure handle (for easier
+    interactive viewing later).
     """
     savefig_mpl(figname, fmt=fmt, **kw) # Save figure first.
     # Append git hash and other metadata to figure file.
@@ -141,12 +141,9 @@ def read_fig_metadata(figpath, stamp_tags_only=True):
 def savez(npzfname, stamp_name='__reproducibility_stamp__', \
           repo_path=None, search_parent_directories=False, **dvars):
     """
-    A wrapper for nimpy.savez() that adds the current
-    git hash (of the repo that created the figure) to the figure metadata, after
-    saving it. Keyword arguments are passed to stamp_fig and numpy.savez.
-
-    If kw 'pickle_fig' is set to True, also pickle the figure handle (for future
-    interactive viewing).
+    A wrapper for numpy.savez() that adds the current git hash (of the repo
+    that created the figure) to the .npz file, after saving it. Keyword
+    arguments are passed to numpy.savez().
     """
     s = stamp(repo_path=repo_path, \
               search_parent_directories=search_parent_directories)
