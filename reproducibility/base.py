@@ -56,14 +56,18 @@ def stamp(repo_path=None, search_parent_directories=False):
         auth = repo.commit().author.name
         authdt = repo.commit().authored_datetime.strftime("%b %d %Y %H:%M:%S %z").strip()
 
-    sname = get_importer(getcwd()).path
-    user = environ['USER']
+    python_version = sys.version
+    global __sname__
+    __sname__ = module_path(stamp)
+    # sname = abspath(getsourcefile(lambda:0))#get_importer(os.getcwd()).path
+    user = os.environ['USER']
     uname = check_output(['uname', '-a']).decode('UTF-8')
     now = datetime.now().strftime("%b %d %Y %H:%M:%S %z").strip()
-    d = dict(parent_script_dir=sname, time_file_was_created=now,
+    d = dict(parent_script_dir=__sname__, time_file_was_created=now,
              file_was_created_by_user=user, git_repo_path=gitpath,
              git_repo_author=auth, time_git_repo_commit=authdt,
-             git_repo_hash=rhash, uname_output=uname)
+             git_repo_hash=rhash, uname_output=uname,
+             python_version=python_version)
 
     return d
 
