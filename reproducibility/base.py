@@ -142,7 +142,7 @@ def savez(npzfname, stamp_name='__reproducibility_stamp__', \
           repo_path=None, search_parent_directories=False, **dvars):
     """
     A wrapper for numpy.savez() that adds the current git hash (of the repo
-    that created the figure) to the .npz file, after saving it. Keyword
+    where the script that created the file lives) to the .npz file. Keyword
     arguments are passed to numpy.savez().
     """
     s = stamp(repo_path=repo_path, \
