@@ -3,11 +3,14 @@
 # E-mail:      paloczy@gmail.com
 
 import pickle
-from os import system, getcwd, environ
+import os
+from os import system
+import sys
+import inspect
+from pkgutil import get_importer
 from subprocess import check_output
 from numpy import load as load_np
 from numpy import savez as savez_np
-from pkgutil import get_importer
 from matplotlib.pyplot import gcf
 from matplotlib.pyplot import savefig as savefig_mpl
 from datetime import datetime
@@ -45,6 +48,7 @@ def stamp(repo_path=None, search_parent_directories=False):
     repo = repohash(repo_path=repo_path,
                     search_parent_directories=search_parent_directories,
                     return_gitobj=True)
+
     if not repo:
         rhash = None
         gitpath = None
@@ -56,14 +60,21 @@ def stamp(repo_path=None, search_parent_directories=False):
         auth = repo.commit().author.name
         authdt = repo.commit().authored_datetime.strftime("%b %d %Y %H:%M:%S %z").strip()
 
+    # Search the list of all scopes above the caller's frame.
+    dirname = get_importer(os.getcwd()).path
+    pnames = inspect.stack() # List with the paths of all the scopes loaded.
+    script_path = None
+    for pname in pnames:
+        pnamef = pname.filename
+        if dirname in pnamef:    # 'dirname' is the directory where the calling
+            script_path = pnamef # script lives. So the path of the scope we are
+                                 # looking for has to have 'dirname' in it.
+
     python_version = sys.version
-    global __sname__
-    __sname__ = module_path(stamp)
-    # sname = abspath(getsourcefile(lambda:0))#get_importer(os.getcwd()).path
     user = os.environ['USER']
     uname = check_output(['uname', '-a']).decode('UTF-8')
     now = datetime.now().strftime("%b %d %Y %H:%M:%S %z").strip()
-    d = dict(parent_script_dir=__sname__, time_file_was_created=now,
+    d = dict(created_by_script=script_path, time_file_was_created=now,
              file_was_created_by_user=user, git_repo_path=gitpath,
              git_repo_author=auth, time_git_repo_commit=authdt,
              git_repo_hash=rhash, uname_output=uname,
@@ -127,7 +138,7 @@ def read_fig_metadata(figpath, stamp_tags_only=True):
     return d
 
 
-def savez(npzfname, stamp_name='reproducibility_stamp', \
+def savez(npzfname, stamp_name='__reproducibility_stamp__', \
           repo_path=None, search_parent_directories=False, **dvars):
     """
     A wrapper for nimpy.savez() that adds the current
