@@ -2,10 +2,11 @@
 # Author:      André Palóczy
 # E-mail:      paloczy@gmail.com
 
-import os
-from os import system
 import pickle
+from os import system, getcwd, environ
 from subprocess import check_output
+from numpy import load as load_np
+from numpy import savez as savez_np
 from pkgutil import get_importer
 from matplotlib.pyplot import gcf
 from matplotlib.pyplot import savefig as savefig_mpl
@@ -19,7 +20,8 @@ __all__ = ['repohash',
            'stamp',
            'stamp_fig',
            'savefig',
-           'read_fig_metadata']
+           'read_fig_metadata',
+           'savez']
 
 
 def repohash(repo_path=None, search_parent_directories=False, return_gitobj=False):
@@ -54,8 +56,8 @@ def stamp(repo_path=None, search_parent_directories=False):
         auth = repo.commit().author.name
         authdt = repo.commit().authored_datetime.strftime("%b %d %Y %H:%M:%S %z").strip()
 
-    sname = get_importer(os.getcwd()).path
-    user = os.environ['USER']
+    sname = get_importer(getcwd()).path
+    user = environ['USER']
     uname = check_output(['uname', '-a']).decode('UTF-8')
     now = datetime.now().strftime("%b %d %Y %H:%M:%S %z").strip()
     d = dict(parent_script_dir=sname, time_file_was_created=now,
@@ -86,7 +88,7 @@ def stamp_fig(figpath, repo_path=None, search_parent_directories=False, wipe=Tru
 def savefig(figname, repo_path=None, search_parent_directories=False, \
             auto_commit=True, fmt='png', pickle_fig=False, **kw):
     """
-    A Wrapper for matplotlib.pyplot.savefig() that adds a the current
+    A wrapper for matplotlib.pyplot.savefig() that adds the current
     git hash (of the repo that created the figure) to the figure metadata, after
     saving it. Keyword arguments are passed to stamp_fig and
     matplotlib.pyplot.savefig.
@@ -119,6 +121,22 @@ def read_fig_metadata(figpath, stamp_tags_only=True):
             _ = d.pop(krm)
 
     return d
+
+
+def savez(npzfname, stamp_name='reproducibility_stamp', \
+          repo_path=None, search_parent_directories=False, **dvars):
+    """
+    A wrapper for nimpy.savez() that adds the current
+    git hash (of the repo that created the figure) to the figure metadata, after
+    saving it. Keyword arguments are passed to stamp_fig and numpy.savez.
+
+    If kw 'pickle_fig' is set to True, also pickle the figure handle (for future
+    interactive viewing).
+    """
+    s = stamp(repo_path=repo_path, \
+              search_parent_directories=search_parent_directories)
+    dvars.update({stamp_name:s})
+    savez_np(npzfname, **dvars)
 
 
 def _guess_fmt(figpath):

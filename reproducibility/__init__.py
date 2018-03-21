@@ -7,10 +7,12 @@ __all__ = ['repohash',
            'stamp',
            'stamp_fig',
            'savefig',
-           'read_fig_metadata']
+           'read_fig_metadata',
+           'savez']
 
 from .base import (repohash,
                    stamp,
                    stamp_fig,
                    savefig,
-                   read_fig_metadata)
+                   read_fig_metadata,
+                   savez)
