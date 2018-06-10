@@ -62,13 +62,17 @@ def stamp(repo_path=None, search_parent_directories=False):
 
     # Search the list of all scopes above the caller's frame.
     dirname = get_importer(os.getcwd()).path
-    pnames = inspect.stack() # List with the paths of all the scopes loaded.
-    script_path = None
-    for pname in pnames:
-        pnamef = pname.filename
-        if dirname in pnamef:    # 'dirname' is the directory where the calling
-            script_path = pnamef # script lives. So the path of the scope we are
-                                 # looking for has to have 'dirname' in it.
+    try: # FIXME: Not getting the calling script's path even when no Error is raised.
+        pnames = inspect.stack() # List with the paths of all the scopes loaded.
+        script_path = None
+        for pname in pnames:
+            pnamef = pname.filename
+            if dirname in pnamef:    # 'dirname' is the directory where the calling
+                script_path = pnamef # script lives. So the path of the scope we are
+                                     # looking for has to have 'dirname' in it.
+    except NameError:
+        print("Could not get parent script name.")
+        script_path= 'none'
 
     python_version = sys.version
     user = os.environ['USER']
